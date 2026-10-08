@@ -1,7 +1,10 @@
+import os
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-TOKEN = "8832629821:AAHVbIQQ8MUf5CGuspJCaMYJL-_rYZcVZYc"
+# Read token securely from environment variable
+TOKEN = os.getenv("TOKEN")
 
 # --- MAIN PAGE ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,26 +35,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🎁 SPECIAL OFFER\nInvite 3 students who join Premium and get FREE access.\n\n"
         "👇 READY TO START?\nChoose an option below 👇"
     )
-    keyboard = [
+
+    # Copy buttons
+    copy_buttons = [
         [InlineKeyboardButton("📋 Copy CBE Account", callback_data="copy_cbe")],
         [InlineKeyboardButton("📋 Copy Telebirr Phone", callback_data="copy_telebirr")],
-        [InlineKeyboardButton("📋 Copy BOA Account", callback_data="copy_boa")],
-        [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="main")]
-    ]
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
-
-    keyboard = [
-        [InlineKeyboardButton("🌉 About Us", callback_data="about")],
-        [InlineKeyboardButton("📚 What Is Available?", callback_data="available")],
-        [InlineKeyboardButton("📢 Join Digi-Bridge", callback_data="join")],
-        [InlineKeyboardButton("❓ Help", callback_data="help")]
+        [InlineKeyboardButton("📋 Copy BOA Account", callback_data="copy_boa")]
     ]
 
-    # Use reply_text only when /start is typed
+    # Navigation buttons
+    nav_buttons = [
+        [InlineKeyboardButton("🌉 About Us", callback_data="about"),
+         InlineKeyboardButton("📚 What Is Available?", callback_data="available")],
+        [InlineKeyboardButton("📢 Join Digi-Bridge", callback_data="join"),
+         InlineKeyboardButton("❓ Help", callback_data="help")]
+    ]
+
+    keyboard = copy_buttons + nav_buttons
+
     if update.message:
         await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
     else:
-        # For callback queries, edit the message
         query = update.callback_query
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -107,7 +111,8 @@ async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📩 AFTER PAYMENT\n1️⃣ Screenshot your payment\n2️⃣ Send to @digibridge1\n3️⃣ Admin verifies\n4️⃣ Access granted\n\n"
         "🎁 Invite 3 students and get Premium FREE!"
     )
-
+    keyboard = [[InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="main")]]
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 # --- HELP ---
 async def help_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -141,7 +146,8 @@ async def copy_boa(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start(update, context)
 
-def main():
+# --- MAIN ENTRYPOINT ---
+async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -154,7 +160,7 @@ def main():
     app.add_handler(CallbackQueryHandler(copy_boa, pattern="copy_boa"))
     app.add_handler(CallbackQueryHandler(main_menu, pattern="main"))
 
-    app.run_polling()
+    await app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
