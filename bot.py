@@ -1,10 +1,9 @@
-import os
-import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# Read token securely from environment variable
-TOKEN = os.getenv("TOKEN")
+import os
+
+TOKEN = os.getenv("BOT_TOKEN")
 
 # --- MAIN PAGE ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -43,7 +42,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📋 Copy BOA Account", callback_data="copy_boa")]
     ]
 
-    # Navigation buttons
+    # Navigation buttons (2x2 grid)
     nav_buttons = [
         [InlineKeyboardButton("🌉 About Us", callback_data="about"),
          InlineKeyboardButton("📚 What Is Available?", callback_data="available")],
@@ -54,11 +53,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = copy_buttons + nav_buttons
 
     if update.message:
-        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
-    else:
+        await update.message.reply_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    elif update.callback_query:
         query = update.callback_query
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
-
+        await query.answer()
+        await query.edit_message_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 # --- ABOUT US ---
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -143,11 +148,13 @@ async def copy_boa(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.reply_text("1030700179656")
 
 # --- MAIN MENU RETURN ---
+# --- MAIN MENU RETURN ---
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
     await start(update, context)
 
-# --- MAIN ENTRYPOINT ---
-async def main():
+def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -160,7 +167,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(copy_boa, pattern="copy_boa"))
     app.add_handler(CallbackQueryHandler(main_menu, pattern="main"))
 
-    await app.run_polling()
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
