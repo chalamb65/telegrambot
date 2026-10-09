@@ -1,6 +1,2 @@
-python-telegram-bot==20.8
-certifi
-tornado
-cachetools
-APScheduler
-pytz
+
+python-telegram-bot
